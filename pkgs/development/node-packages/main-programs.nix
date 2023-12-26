@@ -13,6 +13,7 @@
   "@astrojs/language-server" = "astro-ls";
   "@babel/cli" = "babel";
   "@commitlint/cli" = "commitlint";
+  "@devcontainers/cli" = "devcontainer";
   "@gitbeaker/cli" = "gitbeaker";
   "@prisma/language-server" = "prisma-language-server";
   "@tailwindcss/language-server" = "tailwindcss-language-server";
