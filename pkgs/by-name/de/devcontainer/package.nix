@@ -1,28 +1,49 @@
 { lib
-  , stdenv
+, mkYarnPackage
+, fetchFromGitHub
+, fetchYarnDeps
+, nodejs_18
 }:
 
-stdenv.mkDerivation rec {
-    name = "devcontainer";
-    version = "0.55.0";
+let
+  nodejs = nodejs_18;
+in
+mkYarnPackage rec {
+  pname = "devcontainers";
+  version = "0.55.0";
 
-    src = fetchTarball {
-        url = "https://registry.npmjs.org/@devcontainers/cli/-/cli-${version}.tgz";
-        sha256 = "sha256:07vh9b77mphxzv2ayd0kbmc0mngk7fpkka3ly05zcnzi9qqyvmgr";
-    };
+  src = fetchFromGitHub {
+    owner = "devcontainers";
+    repo = "cli";
+    rev = "v${version}";
+    hash = "sha256-NrN9q8pa9MQWea1MOyQYZMudf1byEX44rgYqiK8qYnQ=";
+  };
 
-    installPhase = ''
-        mkdir -p $out/bin
-        mkdir -p $out/lib
-        cp -r $src/* $out/lib
-        chmod +x $out/lib/devcontainer.js
-        ln -s $out/lib/devcontainer.js $out/bin/devcontainer
-    '';
+  yarnLock = "${src}/yarn.lock";
+  packageJSON = ./package.json;
+
+  offlineCache = fetchYarnDeps {
+    inherit yarnLock;
+    hash = "sha256-puKgUp24IdbAKaBayFxVgIiS4vZHSMVjC+WdUS7yvbs=";
+  };
+
+  nativeBuildInputs = [ nodejs.pkgs.node-pre-gyp nodejs.pkgs.node-gyp-build ];
+
+  buildPhase = ''
+    runHook preBuild
+
+    yarn --offline compile-prod
+
+    runHook postBuild
+  '';
+
+    passthru.updateScript = ./updater.sh;
 
     meta = with lib; {
         description = "Development container reference implementation";
         homepage = "https://containers.dev";
         license = licenses.mit;
         maintainers = with maintainers; [ joshspicer ];
+        changelog = "${src}/CHANGELOG.md";
     };
 }
